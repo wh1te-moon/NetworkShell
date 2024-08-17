@@ -11,11 +11,27 @@ MAC = "(?:(?:[0-9A-Fa-f]{2}[:-.]){5}(?:[0-9A-Fa-f]{2}))"
 
 IPV6 = "(?:(?:(?:[0-9A-Fa-f]{1,4}:){7}(?:[0-9A-Fa-f]{1,4}|:))|(?:(?:[0-9A-Fa-f]{1,4}:){6}(?::[0-9A-Fa-f]{1,4}|(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(?:(?:[0-9A-Fa-f]{1,4}:){5}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,2})|:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(?:(?:[0-9A-Fa-f]{1,4}:){4}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,3})|(?:(?::[0-9A-Fa-f]{1,4})?:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(?:(?:[0-9A-Fa-f]{1,4}:){3}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,4})|(?:(?::[0-9A-Fa-f]{1,4}){0,2}:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(?:(?:[0-9A-Fa-f]{1,4}:){2}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,5})|(?:(?::[0-9A-Fa-f]{1,4}){0,3}:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(?:(?:[0-9A-Fa-f]{1,4}:){1}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,6})|(?:(?::[0-9A-Fa-f]{1,4}){0,4}:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(?::(?:(?:(?::[0-9A-Fa-f]{1,4}){1,7})|(?:(?::[0-9A-Fa-f]{1,4}){0,5}:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))"
 
-PATTERNS = [
-    IPV4, MAC, IPV6
-]
+SHUTDOWN = "shutdown"
+
+PATTERNS_COLOR = {
+    IPV4: "green",
+    MAC: "green",
+    IPV6: "green",
+    SHUTDOWN: "red"
+}
 
 arguments = sys.argv
+
+SPECIAL_KEYS = {
+    '\x00H': '\x1b[A',  # up
+    '\x00P': '\x1b[B',  # down
+    '\x00K': '\x1b[D',  # left
+    '\x00M': '\x1b[C',  # right
+
+    '\x007': '\x1b[3~',  # delete
+    '\x01': '\x1b[H',  # Home
+    '\x05': '\x1b[F',  # End
+}
 
 try:
     # format ip port
@@ -35,17 +51,6 @@ except IndexError:
         print(f"{arguments}\ninput error")
         pass
 
-special_keys = {
-    '\x00H': '\x1b[A',  # up
-    '\x00P': '\x1b[B',  # down
-    '\x00K': '\x1b[D',  # left
-    '\x00M': '\x1b[C',  # right
-
-    '\x007': '\x1b[3~',  # delete
-    '\x01': '\x1b[H',  # Home
-    '\x05': '\x1b[F',  # End
-}
-
 
 async def readkey_async():
     loop = asyncio.get_event_loop()
@@ -57,11 +62,12 @@ async def handle_input(writer):
     while True:
         char = await readkey_async()
         if char is not None:
-            if char in special_keys:
-                char = special_keys[char]
+            if char in SPECIAL_KEYS:
+                char = SPECIAL_KEYS[char]
             writer.write(char)
 
-async def handle_output(reader):
+
+async def handle_output(reader: telnetlib3.TelnetReader):
     buffer = ''
     while True:
         while len(buffer) < 1024:
@@ -77,8 +83,8 @@ async def handle_output(reader):
                 break
 
         if buffer:
-            if(len(buffer) > 1):
-                buffer = ColorTheme.strProcess(buffer, PATTERNS)
+            if (len(buffer) > 1):
+                buffer = ColorTheme.strProcess(buffer, PATTERNS_COLOR)
             print(buffer, end='', flush=True)
 
             # with open("./output.txt", "a") as f:
@@ -89,7 +95,7 @@ async def handle_output(reader):
             buffer = ''
 
 
-async def shell(reader, writer):
+async def shell(reader: telnetlib3.TelnetReader, writer: telnetlib3.TelnetWriter):
     writer.write('\n')
     await asyncio.gather(
         handle_input(writer),
