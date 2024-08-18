@@ -104,6 +104,7 @@ async def handle_output(reader: telnetlib3.TelnetReader):
             if not outp:
                 break
             buffer += outp
+            
             if outp == '\n':
                 break
 
@@ -139,7 +140,7 @@ async def shell(reader: telnetlib3.TelnetReader, writer: telnetlib3.TelnetWriter
     
 
 loop = asyncio.get_event_loop()
-# coro = telnetlib3.open_connection(host, port, shell=shell)
-coro=telnetlib3.open_connection("192.168.109.128", 32776, shell=shell)
+coro = telnetlib3.open_connection(host, port, shell=shell)
+# coro=telnetlib3.open_connection("192.168.109.128", 32776, shell=shell)
 reader, writer = loop.run_until_complete(coro)
 loop.run_until_complete(writer.protocol.waiter_closed)
