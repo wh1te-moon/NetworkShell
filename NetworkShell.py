@@ -57,7 +57,7 @@ try:
     port = int(arguments[2])
     print(f"connecting to {host} on port {port}")
 except IndexError:
-    # format 'telnet://ip:port/'
+    # format 'telnet://ip:port/' or 'ssh://ip:port/'
     try:
         colon_index = arguments[1].find(":")
         arguments[1] = arguments[1][colon_index+3:]
@@ -69,8 +69,16 @@ except IndexError:
         print(f"{arguments}\tinput error")
         pass
 
+method = "ssh" if len(arguments)<=3 else "telnet"
+if method == "ssh":
+    # format prefix username password 
+    username = arguments[-2]
+    password = arguments[-1]
 
 
 loop = asyncio.get_event_loop()
-telnet_conn = TelnetConnection("192.168.109.128", 32776)
-loop.run_until_complete(telnet_conn.shell())
+if method == "ssh":
+    conn = SSHConnection(host, port, username, password)
+else:
+    conn = TelnetConnection(host, port)
+loop.run_until_complete(conn.shell())
