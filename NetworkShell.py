@@ -32,24 +32,8 @@ if not os.path.exists(LOGS_FOLDER):
 else:
     print("logs folder found\n")
 
-arguments = sys.argv
-
-now = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
-
-device = None
-
-log_file = None
-
-SPECIAL_KEYS = {
-    '\x00H': '\x1b[A',  # up
-    '\x00P': '\x1b[B',  # down
-    '\x00K': '\x1b[D',  # left
-    '\x00M': '\x1b[C',  # right
-
-    '\x007': '\x1b[3~',  # delete
-    '\x01': '\x1b[H',  # Home
-    '\x05': '\x1b[F',  # End
-}
+# arguments = sys.argv
+arguments=["","192.168.1.1","22","root","password"]
 
 try:
     # format ip port
@@ -69,7 +53,7 @@ except IndexError:
         print(f"{arguments}\tinput error")
         pass
 
-method = "ssh" if len(arguments)<=3 else "telnet"
+method = "telnet" if len(arguments)<=3 else "ssh"
 if method == "ssh":
     # format prefix username password 
     username = arguments[-2]
@@ -78,7 +62,8 @@ if method == "ssh":
 
 loop = asyncio.get_event_loop()
 if method == "ssh":
-    conn = SSHConnection(host, port, username, password)
+    conn = SSHConnection(PATTERNS_COLOR,LOGS_FOLDER)
+    loop.run_until_complete(conn.shell(host, port, username, password))
 else:
-    conn = TelnetConnection(host, port)
-loop.run_until_complete(conn.shell())
+    conn = TelnetConnection(PATTERNS_COLOR,LOGS_FOLDER)
+    loop.run_until_complete(conn.shell(host, port))
