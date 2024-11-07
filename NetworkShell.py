@@ -3,7 +3,7 @@ import sys
 import time
 import os
 
-from NetworkShellClass import SSHConnection,TelnetConnection
+from NetworkShellClass import SSHConnection, TelnetConnection
 
 IPV4 = "(?:(?:1[0-9][0-9]\.)|(?:2[0-4][0-9]\.)|(?:25[0-5]\.)|(?:[1-9][0-9]\.)|(?:[0-9]\.)){3}(?:(?:1[0-9][0-9])|(?:2[0-4][0-9])|(?:25[0-5])|(?:[1-9][0-9])|(?:[0-9]))"
 
@@ -22,18 +22,19 @@ PATTERNS_COLOR = {
 
 LOGS_FOLDER = "./logs"
 
-if(not os.path.isabs(LOGS_FOLDER)):
+if (not os.path.isabs(LOGS_FOLDER)):
     os.chdir(os.path.dirname(__file__))
+    LOGS_FOLDER = os.path.abspath(LOGS_FOLDER)
 
 if not os.path.exists(LOGS_FOLDER):
     os.makedirs(LOGS_FOLDER)
     print("logs folder not found")
-    print("logs folder created\n")
+    print(f"logs folder created {LOGS_FOLDER}\n")
 else:
-    print("logs folder found\n")
+    print(f"logs folder found {LOGS_FOLDER}\n")
 
-# arguments = sys.argv
-arguments=["","192.168.1.1","22","root","password"]
+arguments = sys.argv
+# arguments = ["", "192.168.1.1", "22", "root", "password"]
 
 try:
     # format ip port
@@ -53,17 +54,17 @@ except IndexError:
         print(f"{arguments}\tinput error")
         pass
 
-method = "telnet" if len(arguments)<=3 else "ssh"
+method = "telnet" if len(arguments) <= 3 else "ssh"
 if method == "ssh":
-    # format prefix username password 
+    # format prefix username password
     username = arguments[-2]
     password = arguments[-1]
 
 
 loop = asyncio.get_event_loop()
 if method == "ssh":
-    conn = SSHConnection(PATTERNS_COLOR,LOGS_FOLDER)
+    conn = SSHConnection(PATTERNS_COLOR, LOGS_FOLDER)
     loop.run_until_complete(conn.shell(host, port, username, password))
 else:
-    conn = TelnetConnection(PATTERNS_COLOR,LOGS_FOLDER)
+    conn = TelnetConnection(PATTERNS_COLOR, LOGS_FOLDER)
     loop.run_until_complete(conn.shell(host, port))

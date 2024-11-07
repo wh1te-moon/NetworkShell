@@ -66,13 +66,10 @@ class BaseConnection:
         while True:
             while len(buffer) < 1024:
                 try:
-                    outp = await asyncio.wait_for(self.read(1), timeout=0.02)
+                    outp = await asyncio.wait_for(self.read(1), timeout=0.04)
                 except asyncio.TimeoutError:
                     break
                 except Exception as e:
-                    # if device:
-                    #     with open(f"./logs/{device}_{now}.txt", "a+") as f:
-                    #         f.write(e)
                     break
 
                 if not outp:
@@ -87,15 +84,16 @@ class BaseConnection:
                     try:
                         self.device = re.search(
                             r'(\S+)(?=[#>])', buffer).group(0)
+                        self.device = re.sub(r'[^\w]', '', self.device)
                     except AttributeError:
                         self.device = None
 
                 if self.device:
-                    with open(f"./{self.log_folder}/{self.device}_{self.now}.txt", "a+") as f:
+                    with open(f"{self.log_folder}/{self.device}_{self.now}.txt", "a+") as f:
                         f.write(buffer)
 
                 if len(buffer) > 1:
-                    buffer = ColorTheme.strProcess(buffer, self.pattern_color)
+                    buffer = ColorTheme.STRToColoredSTR(buffer, self.pattern_color)
                 print(buffer, end='', flush=True)
                 buffer = ''
 
@@ -165,9 +163,6 @@ class SSHConnection(BaseConnection):
         self.client.connect(self.host, port=self.port,
                             username=self.username, password=self.password)
         self.channel = self.client.invoke_shell()
-        # self.timeout = 0.01
-        # self.stdin = self.channel.recv
-        # self.stdout = self.channel.send
 
     async def read(self, n=-1):
         while True:
@@ -175,7 +170,7 @@ class SSHConnection(BaseConnection):
                 self.char = self.channel.recv(n).decode('utf-8')
                 break
             else:
-                await asyncio.sleep(0.05)
+                await asyncio.sleep(0.01)
                 continue
         return self.char
 
